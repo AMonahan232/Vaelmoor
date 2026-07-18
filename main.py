@@ -2,8 +2,9 @@
 
 import pygame
 
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, COLOR_BG
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, COLOR_BG, MAPS_DIR
 from entities.player import Player
+from systems.tilemap import Tilemap
 
 
 class Game:
@@ -14,6 +15,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        self.tilemap = Tilemap(MAPS_DIR / "room_0.csv")
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.sprites = pygame.sprite.Group(self.player)
 
@@ -27,9 +29,10 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.running = False
 
-            self.sprites.update(dt)
+            self.sprites.update(dt, self.tilemap.solids)
 
             self.screen.fill(COLOR_BG)
+            self.tilemap.draw(self.screen)
             self.sprites.draw(self.screen)
             pygame.display.flip()
 
