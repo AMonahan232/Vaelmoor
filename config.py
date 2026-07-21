@@ -37,6 +37,12 @@ ATTACK_COOLDOWN = 0.35   # seconds between swing starts
 KNOCKBACK_SPEED = 350
 KNOCKBACK_TIME = 0.12
 
+# Player survival
+PLAYER_MAX_HEALTH = 3
+PLAYER_INVULN_TIME = 1.0    # i-frames after being hit
+PLAYER_KNOCK_TIME = 0.12    # input-locked knockback within the i-frames
+BLINK_INTERVAL = 0.1        # invulnerability flicker rate
+
 # Placeholder palette until real art exists
 COLOR_BG = (24, 26, 33)
 COLOR_PLAYER = (92, 179, 99)
@@ -45,3 +51,5 @@ COLOR_WALL = (108, 96, 130)
 COLOR_ENEMY = (196, 84, 80)
 COLOR_ENEMY_HURT = (255, 176, 170)
 COLOR_SWORD = (230, 225, 200)
+COLOR_HEART = (214, 62, 74)
+COLOR_TEXT = (236, 232, 226)
