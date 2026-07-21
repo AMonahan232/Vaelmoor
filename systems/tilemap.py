@@ -10,6 +10,7 @@ from config import TILE_SIZE, COLOR_FLOOR, COLOR_WALL
 # Tile ids as they appear in the CSV files
 FLOOR = 0
 WALL = 1
+ENEMY_SPAWN = 2  # walkable floor that also marks where an enemy starts
 
 
 class Tilemap:
@@ -33,11 +34,20 @@ class Tilemap:
             if tile == WALL
         ]
 
+        # Spawn markers live in the map so each room owns its enemy layout
+        self.enemy_spawns = [
+            (col * TILE_SIZE, row * TILE_SIZE)
+            for row, line in enumerate(self.grid)
+            for col, tile in enumerate(line)
+            if tile == ENEMY_SPAWN
+        ]
+
         self.surface = pygame.Surface(
             (self.width * TILE_SIZE, self.height * TILE_SIZE)
         )
         for row, line in enumerate(self.grid):
             for col, tile in enumerate(line):
+                # Spawn markers render as plain floor — they're data, not decor
                 color = COLOR_WALL if tile == WALL else COLOR_FLOOR
                 pygame.draw.rect(
                     self.surface,

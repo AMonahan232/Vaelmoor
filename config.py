@@ -24,9 +24,15 @@ FPS = 60
 # Movement speeds are in pixels per second (not per frame) so gameplay
 # feels identical even if the frame rate dips.
 PLAYER_SPEED = 200
+ENEMY_SPEED = 90
+
+# Wander AI timing: (min, max) seconds fed to random.uniform
+ENEMY_WALK_TIME = (0.8, 2.0)
+ENEMY_IDLE_TIME = (0.5, 1.2)
 
 # Placeholder palette until real art exists
 COLOR_BG = (24, 26, 33)
 COLOR_PLAYER = (92, 179, 99)
 COLOR_FLOOR = (54, 48, 65)
 COLOR_WALL = (108, 96, 130)
+COLOR_ENEMY = (196, 84, 80)

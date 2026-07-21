@@ -1,0 +1,57 @@
+"""A wandering enemy."""
+
+import random
+
+import pygame
+
+from config import (
+    TILE_SIZE,
+    ENEMY_SPEED,
+    ENEMY_WALK_TIME,
+    ENEMY_IDLE_TIME,
+    COLOR_ENEMY,
+)
+from entities.entity import Entity
+
+CARDINALS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+# Module-level RNG used by the real game; tests pass their own seeded
+# random.Random so enemy behavior is reproducible in assertions.
+_rng = random.Random()
+
+
+class Enemy(Entity):
+    """Octorok-style wanderer: walk a random cardinal direction, then pause.
+
+    Behavior is a two-state machine (WALK/IDLE) driven by countdown timers.
+    Hitting a wall ends a walk early. States instead of nested ifs because
+    later behaviors (chase, flee, attack) then become new states rather
+    than deeper conditionals.
+    """
+
+    def __init__(self, x: float, y: float, rng: random.Random = _rng) -> None:
+        super().__init__(x, y, TILE_SIZE, COLOR_ENEMY)
+        self.rng = rng
+        self.direction = pygame.math.Vector2()
+        self.state = "idle"
+        self.timer = rng.uniform(*ENEMY_IDLE_TIME)
+
+    def update(self, dt: float, solids: list[pygame.Rect]) -> None:
+        self.timer -= dt
+        if self.state == "walk":
+            hit_wall = self._move_axis(self.direction.x * ENEMY_SPEED * dt, 0, solids)
+            hit_wall |= self._move_axis(0, self.direction.y * ENEMY_SPEED * dt, solids)
+            if hit_wall or self.timer <= 0:
+                self._enter_idle()
+        elif self.timer <= 0:
+            self._enter_walk()
+
+    def _enter_idle(self) -> None:
+        self.state = "idle"
+        self.timer = self.rng.uniform(*ENEMY_IDLE_TIME)
+
+    def _enter_walk(self) -> None:
+        self.state = "walk"
+        self.timer = self.rng.uniform(*ENEMY_WALK_TIME)
+        self.direction = pygame.math.Vector2(self.rng.choice(CARDINALS))
+        self.facing = self.direction.copy()

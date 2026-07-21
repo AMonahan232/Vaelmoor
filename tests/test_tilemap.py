@@ -37,3 +37,10 @@ def test_border_is_solid_and_center_is_walkable(room):
 def test_out_of_bounds_counts_as_solid(room):
     assert room.is_solid(-1, 5)
     assert room.is_solid(5, room.height)
+
+
+def test_enemy_spawns_are_collected_and_walkable(room):
+    assert len(room.enemy_spawns) == 3
+    for x, y in room.enemy_spawns:
+        assert x % TILE_SIZE == 0 and y % TILE_SIZE == 0
+        assert not room.is_solid(x // TILE_SIZE, y // TILE_SIZE)

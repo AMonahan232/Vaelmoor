@@ -3,6 +3,7 @@
 import pygame
 
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, COLOR_BG, MAPS_DIR
+from entities.enemy import Enemy
 from entities.player import Player
 from systems.tilemap import Tilemap
 
@@ -17,7 +18,8 @@ class Game:
 
         self.tilemap = Tilemap(MAPS_DIR / "room_0.csv")
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-        self.sprites = pygame.sprite.Group(self.player)
+        self.enemies = [Enemy(x, y) for x, y in self.tilemap.enemy_spawns]
+        self.sprites = pygame.sprite.Group(self.player, *self.enemies)
 
     def run(self) -> None:
         while self.running:
