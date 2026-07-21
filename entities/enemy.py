@@ -9,7 +9,11 @@ from config import (
     ENEMY_SPEED,
     ENEMY_WALK_TIME,
     ENEMY_IDLE_TIME,
+    ENEMY_HEALTH,
+    KNOCKBACK_SPEED,
+    KNOCKBACK_TIME,
     COLOR_ENEMY,
+    COLOR_ENEMY_HURT,
 )
 from entities.entity import Entity
 
@@ -33,12 +37,35 @@ class Enemy(Entity):
         super().__init__(x, y, TILE_SIZE, COLOR_ENEMY)
         self.rng = rng
         self.direction = pygame.math.Vector2()
+        self.health = ENEMY_HEALTH
+        self.knock_dir = pygame.math.Vector2()
         self.state = "idle"
         self.timer = rng.uniform(*ENEMY_IDLE_TIME)
 
+    def take_hit(self, direction: pygame.math.Vector2) -> None:
+        """Take one sword hit: die at 0 HP, otherwise get knocked back."""
+        self.health -= 1
+        if self.health <= 0:
+            self.kill()  # drops us out of every sprite group
+            return
+        self.state = "hurt"
+        self.timer = KNOCKBACK_TIME
+        self.knock_dir = pygame.math.Vector2(direction)
+        if self.knock_dir.length_squared() > 0:
+            self.knock_dir = self.knock_dir.normalize()
+        self.image.fill(COLOR_ENEMY_HURT)
+
     def update(self, dt: float, solids: list[pygame.Rect]) -> None:
         self.timer -= dt
-        if self.state == "walk":
+        if self.state == "hurt":
+            # _move_axis resolves against walls, so knockback can't
+            # shove an enemy through them
+            self._move_axis(self.knock_dir.x * KNOCKBACK_SPEED * dt, 0, solids)
+            self._move_axis(0, self.knock_dir.y * KNOCKBACK_SPEED * dt, solids)
+            if self.timer <= 0:
+                self.image.fill(COLOR_ENEMY)
+                self._enter_idle()
+        elif self.state == "walk":
             hit_wall = self._move_axis(self.direction.x * ENEMY_SPEED * dt, 0, solids)
             hit_wall |= self._move_axis(0, self.direction.y * ENEMY_SPEED * dt, solids)
             if hit_wall or self.timer <= 0:
