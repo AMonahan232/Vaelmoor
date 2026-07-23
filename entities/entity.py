@@ -21,6 +21,15 @@ class Entity(pygame.sprite.Sprite):
         self.pos = pygame.math.Vector2(x, y)
         self.facing = pygame.math.Vector2(0, 1)
 
+    def place(self, x: float, y: float) -> None:
+        """Teleport to (x, y), keeping the float pos and integer rect in sync.
+
+        Used for room transitions and (re)spawns — anywhere position is set
+        directly rather than by accumulated movement.
+        """
+        self.pos.update(x, y)
+        self.rect.topleft = round(x), round(y)
+
     def _move_axis(
         self, dx: float, dy: float, solids: list[pygame.Rect]
     ) -> bool:

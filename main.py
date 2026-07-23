@@ -5,6 +5,7 @@ import pygame
 from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
+    TILE_SIZE,
     FPS,
     COLOR_BG,
     COLOR_SWORD,
@@ -15,6 +16,7 @@ from entities.enemy import Enemy
 from entities.player import Player
 from systems.tilemap import Tilemap
 from systems.hud import HUD
+from systems.world import World
 
 
 class Game:
@@ -26,22 +28,27 @@ class Game:
         self.font = pygame.font.SysFont(None, 64)
         self.hud = HUD()
         self.running = True
-
-        # The room never changes across restarts, so load it once here rather
-        # than in reset(); only the mortal things get rebuilt on death.
-        self.tilemap = Tilemap(MAPS_DIR / "room_0.csv")
         self.reset()
 
     def reset(self) -> None:
-        """(Re)build player and enemies. Shared by boot and restart so the
-        two paths can't drift apart."""
+        """Start a fresh run: new player, back to the start room. Shared by
+        boot and game-over restart so the two paths can't drift apart."""
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        self.world = World()
+        self.load_room(self.world.coord)
+        self.state = "playing"
+
+    def load_room(self, coord: tuple[int, int]) -> None:
+        """Swap to the room at `coord`. Keeps the same player instance so
+        health and state carry across doorways; only the room and its enemies
+        are rebuilt. Also the single path that boot and transitions share."""
+        self.world.coord = coord
+        self.tilemap = Tilemap(MAPS_DIR / self.world.file_for(coord))
         # A Group (not a list) so a dead enemy's kill() removes it everywhere
         self.enemies = pygame.sprite.Group(
             Enemy(x, y) for x, y in self.tilemap.enemy_spawns
         )
         self.sprites = pygame.sprite.Group(self.player, *self.enemies)
-        self.state = "playing"
 
     def run(self) -> None:
         while self.running:
@@ -69,10 +76,34 @@ class Game:
 
     def _update(self, dt: float) -> None:
         self.sprites.update(dt, self.tilemap.solids)
+        self._check_transition()  # may swap rooms before combat resolves
         self.player.strike(self.enemies)
         self._resolve_contact_damage()
         if self.player.health <= 0:
             self.state = "game_over"
+
+    def _check_transition(self) -> None:
+        """If the player walked off an edge toward a real room, move to it and
+        re-enter at the mirrored spot — crossed axis flips to the far edge,
+        perpendicular axis is preserved so the doorway feels continuous."""
+        p = self.player.rect
+        x, y = self.player.pos.x, self.player.pos.y
+        if p.centerx >= SCREEN_WIDTH:
+            direction, x = (1, 0), TILE_SIZE
+        elif p.centerx <= 0:
+            direction, x = (-1, 0), SCREEN_WIDTH - 2 * TILE_SIZE
+        elif p.centery >= SCREEN_HEIGHT:
+            direction, y = (0, 1), TILE_SIZE
+        elif p.centery <= 0:
+            direction, y = (0, -1), SCREEN_HEIGHT - 2 * TILE_SIZE
+        else:
+            return
+
+        target = self.world.neighbor(direction)
+        if target is None:
+            return  # gaps only lead to real rooms, so this is just a guard
+        self.player.place(x, y)
+        self.load_room(target)
 
     def _resolve_contact_damage(self) -> None:
         # take_hit is a no-op during i-frames, so firing it on every

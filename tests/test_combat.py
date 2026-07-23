@@ -77,8 +77,9 @@ def test_miss_leaves_enemy_untouched():
 
 
 def test_hit_knocks_back_and_walls_stop_it(room):
-    # Enemy one tile from the right border wall; knock it rightward
-    enemy = make_enemy(TILE_SIZE * 27, TILE_SIZE * 10)
+    # Enemy one tile from the right border wall; knock it rightward.
+    # Row 5 (not the rows 9-10 doorway gap) so a wall is actually there.
+    enemy = make_enemy(TILE_SIZE * 27, TILE_SIZE * 5)
     enemy.take_hit(pygame.math.Vector2(1, 0))
     assert enemy.state == "hurt"
     for _ in range(30):
